@@ -1,3 +1,3 @@
-package com.example.ProjectX.dto;
+package com.example.ProjectX.dto.register;
 
 public record UserRegistrationRequestDto(String email, String password, String repeatPassword) {}

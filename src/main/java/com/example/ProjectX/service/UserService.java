@@ -3,8 +3,11 @@ package com.example.ProjectX.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.ProjectX.dto.UserRegistrationRequestDto;
-import com.example.ProjectX.dto.UserResponseDto;
+import com.example.ProjectX.dto.login.UserLoginRequestDto;
+import com.example.ProjectX.dto.login.UserLoginResponseDto;
+import com.example.ProjectX.dto.register.UserRegistrationRequestDto;
+import com.example.ProjectX.dto.register.UserRegistrationResponseDto;
+import com.example.ProjectX.exception.AuthenticationException;
 import com.example.ProjectX.exception.EmailFoundException;
 import com.example.ProjectX.exception.PasswordException;
 import com.example.ProjectX.model.Role;
@@ -19,7 +22,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public UserResponseDto register(UserRegistrationRequestDto user) {
+    public UserRegistrationResponseDto register(UserRegistrationRequestDto user) {
         if (!user.password().equals(user.repeatPassword())) {
             throw new PasswordException("Password do not match");
         }
@@ -41,7 +44,16 @@ public class UserService {
         return user;
     }
 
-    private UserResponseDto toResponseDto(User user) {
-        return new UserResponseDto(user.getId(), user.getEmail());
+    private UserRegistrationResponseDto toResponseDto(User user) {
+        return new UserRegistrationResponseDto(user.getId(), user.getEmail());
+    }
+
+    public UserLoginResponseDto login(UserLoginRequestDto user) {
+        User currentUser = userRepository.findByEmail(user.email())
+                .orElseThrow(() -> new AuthenticationException("Invalid email or password"));
+        if(!passwordEncoder.matches(user.password(), currentUser.getPassword())) {
+            throw new AuthenticationException("Invalid email or password");
+        }
+        return new UserLoginResponseDto("тимчасовий токен");
     }
 }
