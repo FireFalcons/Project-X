@@ -13,6 +13,7 @@ import com.example.ProjectX.exception.PasswordException;
 import com.example.ProjectX.model.Role;
 import com.example.ProjectX.model.User;
 import com.example.ProjectX.repository.UserRepository;
+import com.example.ProjectX.token.JwtTokenProvider;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     public UserRegistrationResponseDto register(UserRegistrationRequestDto user) {
         if (!user.password().equals(user.repeatPassword())) {
@@ -54,6 +56,6 @@ public class UserService {
         if(!passwordEncoder.matches(user.password(), currentUser.getPassword())) {
             throw new AuthenticationException("Invalid email or password");
         }
-        return new UserLoginResponseDto("тимчасовий токен");
+        return new UserLoginResponseDto(jwtTokenProvider.generateToken(currentUser.getEmail(), currentUser.getRole().name()));
     }
 }
