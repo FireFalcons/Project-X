@@ -5,10 +5,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("api/file")
+@RequestMapping("api/files")
 public class FileController {
     
-    @GetMapping("/valid")
+    @GetMapping()
     public String validation() {
         return "Token is valid";
     }
