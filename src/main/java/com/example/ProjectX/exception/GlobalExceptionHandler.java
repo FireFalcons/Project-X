@@ -7,7 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@RestControllerAdvice
+import com.example.ProjectX.exception.filter.InvalidTokenException;
+import com.example.ProjectX.exception.login.EmailFoundException;
+import com.example.ProjectX.exception.login.PasswordException;
+import com.example.ProjectX.exception.register.AuthException;
+
+@RestControllerAdvice()
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EmailFoundException.class)
@@ -20,8 +25,13 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorResponseDto> handlerAuthException(AuthenticationException ex) {
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ErrorResponseDto> handlerAuthException(AuthException ex) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<ErrorResponseDto> handlerGenericException(InvalidTokenException ex) {
         return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
@@ -29,6 +39,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDto> handlerGenericException(Exception ex) {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong");
     }
+
+
 
     public ResponseEntity<ErrorResponseDto> buildResponse(HttpStatus status, String message) {
         ErrorResponseDto body = new ErrorResponseDto(LocalDateTime.now(), status.value(), message);

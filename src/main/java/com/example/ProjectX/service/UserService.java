@@ -7,9 +7,9 @@ import com.example.ProjectX.dto.login.UserLoginRequestDto;
 import com.example.ProjectX.dto.login.UserLoginResponseDto;
 import com.example.ProjectX.dto.register.UserRegistrationRequestDto;
 import com.example.ProjectX.dto.register.UserRegistrationResponseDto;
-import com.example.ProjectX.exception.AuthenticationException;
-import com.example.ProjectX.exception.EmailFoundException;
-import com.example.ProjectX.exception.PasswordException;
+import com.example.ProjectX.exception.login.EmailFoundException;
+import com.example.ProjectX.exception.login.PasswordException;
+import com.example.ProjectX.exception.register.AuthException;
 import com.example.ProjectX.model.Role;
 import com.example.ProjectX.model.User;
 import com.example.ProjectX.repository.UserRepository;
@@ -52,9 +52,9 @@ public class UserService {
 
     public UserLoginResponseDto login(UserLoginRequestDto user) {
         User currentUser = userRepository.findByEmail(user.email())
-                .orElseThrow(() -> new AuthenticationException("Invalid email or password"));
+                .orElseThrow(() -> new AuthException("Invalid email or password"));
         if(!passwordEncoder.matches(user.password(), currentUser.getPassword())) {
-            throw new AuthenticationException("Invalid email or password");
+            throw new AuthException("Invalid email or password");
         }
         return new UserLoginResponseDto(jwtTokenProvider.generateToken(currentUser.getEmail(), currentUser.getRole().name()));
     }

@@ -10,6 +10,6 @@ public class FileController {
     
     @GetMapping()
     public String validation() {
-        return "Token is valid";
+        return "";
     }
 }

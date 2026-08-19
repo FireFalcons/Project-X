@@ -1,17 +1,17 @@
 package com.example.ProjectX.filter;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
-import com.example.ProjectX.exception.ErrorResponseDto;
+import com.example.ProjectX.exception.filter.InvalidTokenException;
 import com.example.ProjectX.token.JwtTokenProvider;
 
 import io.jsonwebtoken.ExpiredJwtException;
@@ -20,14 +20,19 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import tools.jackson.databind.ObjectMapper;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
-    private final ObjectMapper objectMapper;
+    private final HandlerExceptionResolver resolver;
+
+    
+
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, 
+                                   @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolver) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.resolver = resolver;
+    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
@@ -58,18 +63,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             filterChain.doFilter(request, response);
         } catch (ExpiredJwtException ex) {
-            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "Token has expired");
+            resolver.resolveException(request, response, null, new InvalidTokenException("Token has expired"));
+            return;
         } catch (JwtException ex) {
-            writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "Invalid token");
+            resolver.resolveException(request, response, null, new InvalidTokenException("Invalid token"));
+            return;
         }
-
-    }
-
-    private void writeErrorResponse(HttpServletResponse response, HttpStatus status, String message) throws IOException {
-        ErrorResponseDto errorBody = new ErrorResponseDto(LocalDateTime.now(), status.value(), message);
-
-        response.setStatus(status.value());
-        response.setContentType("application/json");
-        response.getWriter().write(objectMapper.writeValueAsString(errorBody));
     }
 }

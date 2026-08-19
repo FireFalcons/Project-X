@@ -39,7 +39,6 @@ public class SecurityConfig {
             .exceptionHandling(exp -> exp
                 .authenticationEntryPoint(jwtAuthEntryPoint)
             );
-            
             return http.build();
     }
 }

@@ -5,6 +5,7 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -13,8 +14,11 @@ import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtTokenProvider {
-    private static final String SECRET_KEY = "52345791264134471928072630816285";
-    private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24;
+    @Value("${app.security.secret}")
+    private String SECRET_KEY;
+
+    @Value("${app.expiration.time}")
+    private long EXPIRATION_TIME;
 
 
     public String generateToken(String email, String role) {

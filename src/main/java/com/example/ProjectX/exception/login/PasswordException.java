@@ -1,4 +1,4 @@
-package com.example.ProjectX.exception;
+package com.example.ProjectX.exception.login;
 
 public class PasswordException extends RuntimeException {
 
