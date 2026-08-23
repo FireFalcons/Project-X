@@ -25,12 +25,12 @@ public class UserService {
     private final JwtTokenProvider jwtTokenProvider;
 
     public UserRegistrationResponseDto register(UserRegistrationRequestDto user) {
-        if (!user.password().equals(user.repeatPassword())) {
-            throw new PasswordException("Password do not match");
-        }
-
         if (userRepository.findByEmail(user.email()).isPresent()) {
             throw new EmailFoundException("A user with this email address exists");
+        }
+
+        if (user.password() == null) {
+            throw new PasswordException("Password field is not specified");
         }
 
         String hashedPassword = passwordEncoder.encode(user.password());
