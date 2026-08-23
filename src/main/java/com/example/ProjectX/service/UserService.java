@@ -3,13 +3,17 @@ package com.example.ProjectX.service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.example.ProjectX.dto.UserRegistrationRequestDto;
-import com.example.ProjectX.dto.UserResponseDto;
-import com.example.ProjectX.exception.EmailFoundException;
-import com.example.ProjectX.exception.PasswordException;
+import com.example.ProjectX.dto.login.UserLoginRequestDto;
+import com.example.ProjectX.dto.login.UserLoginResponseDto;
+import com.example.ProjectX.dto.register.UserRegistrationRequestDto;
+import com.example.ProjectX.dto.register.UserRegistrationResponseDto;
+import com.example.ProjectX.exception.login.EmailFoundException;
+import com.example.ProjectX.exception.login.PasswordException;
+import com.example.ProjectX.exception.register.AuthException;
 import com.example.ProjectX.model.Role;
 import com.example.ProjectX.model.User;
 import com.example.ProjectX.repository.UserRepository;
+import com.example.ProjectX.token.JwtTokenProvider;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,14 +22,15 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    public UserResponseDto register(UserRegistrationRequestDto user) {
-        if (!user.password().equals(user.repeatPassword())) {
-            throw new PasswordException("Password do not match");
-        }
-
+    public UserRegistrationResponseDto register(UserRegistrationRequestDto user) {
         if (userRepository.findByEmail(user.email()).isPresent()) {
             throw new EmailFoundException("A user with this email address exists");
+        }
+
+        if (user.password() == null) {
+            throw new PasswordException("Password field is not specified");
         }
 
         String hashedPassword = passwordEncoder.encode(user.password());
@@ -41,7 +46,16 @@ public class UserService {
         return user;
     }
 
-    private UserResponseDto toResponseDto(User user) {
-        return new UserResponseDto(user.getId(), user.getEmail());
+    private UserRegistrationResponseDto toResponseDto(User user) {
+        return new UserRegistrationResponseDto(user.getId(), user.getEmail());
+    }
+
+    public UserLoginResponseDto login(UserLoginRequestDto user) {
+        User currentUser = userRepository.findByEmail(user.email())
+                .orElseThrow(() -> new AuthException("Invalid email or password"));
+        if(!passwordEncoder.matches(user.password(), currentUser.getPassword())) {
+            throw new AuthException("Invalid email or password");
+        }
+        return new UserLoginResponseDto(jwtTokenProvider.generateToken(currentUser.getEmail(), currentUser.getRole().name()));
     }
 }
