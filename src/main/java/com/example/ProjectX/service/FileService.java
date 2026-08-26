@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.ProjectX.dto.FileResponseDto;
 import com.example.ProjectX.model.File;
+import com.example.ProjectX.model.User;
 import com.example.ProjectX.repository.FileRepository;
 
 import jakarta.transaction.Transactional;
@@ -19,45 +20,66 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FileService {
     private final FileRepository fileRepository;
-    private final String uploadDir = "D:\\ProjectX-Files";
+    private final String directory = System.getProperty("user.dir") + java.io.File.separator + "storage";
+    
+    public FileResponseDto save(MultipartFile file, User activeUser) throws IOException {
+        java.io.File dir = new java.io.File(directory);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        String originalName = file.getOriginalFilename();
+        Long fileSize = file.getSize();
+        LocalDateTime now = LocalDateTime.now();
 
-    public FileResponseDto save(MultipartFile file) throws IOException {
-       String originalName = file.getOriginalFilename();
-       Long fileSize = file.getSize();
-       LocalDateTime now = LocalDateTime.now();
+        String extension = originalName.substring(originalName.lastIndexOf("."));
+        String generatedName = UUID.randomUUID().toString() + extension;
 
-       String extension = originalName.substring(originalName.lastIndexOf("."));
-       String generatedName = UUID.randomUUID().toString() + extension;
+        File entity = new File();
+        entity.setName(generatedName);
+        entity.setUser(activeUser);
+        entity.setSize(fileSize);
+        entity.setCreateTime(now);
 
-       File entity = new File();
-       entity.setName(generatedName);
-       entity.setSize(fileSize);
-       entity.setCreateTime(now);
+        java.io.File dest = new java.io.File(directory + java.io.File.separator + generatedName);
 
-       java.io.File dest = new java.io.File(uploadDir + java.io.File.separator + generatedName);
+        file.transferTo(dest);
+        fileRepository.save(entity);
 
-       file.transferTo(dest);
-       fileRepository.save(entity);
-
-       return new FileResponseDto(generatedName, fileSize, now, now);
+        return new FileResponseDto(generatedName, fileSize, now, now, activeUser.getEmail());
     }
 
-    public List<FileResponseDto> getAll() {
-        return fileRepository.findAll().stream().map(
-            f -> new FileResponseDto(f.getName(), f.getSize(), f.getCreateTime(), f.getChangTime())
-        ).toList();
+    public List<FileResponseDto> getAll(User activeUser) {
+        return fileRepository.findAllByUser(activeUser).stream().map(
+            f -> new FileResponseDto(
+                f.getName(), 
+                f.getSize(), 
+                f.getCreateTime(), 
+                f.getChangTime(), 
+                f.getUser().getEmail()
+            )).toList();
     }
 
-    public FileResponseDto findById(Long id) {
-        return fileRepository.findById(id).map(
-            f -> new FileResponseDto(f.getName(), f.getSize(), f.getCreateTime(), f.getChangTime())
-        ).orElseThrow(() -> new RuntimeException("File not found"));
+    public FileResponseDto findById(Long id, User activeUser) {
+        File file = fileRepository.findById(id).orElseThrow(() -> new RuntimeException("File not found"));
+        if (!file.getUser().getId().equals(activeUser.getId())) {
+            throw new RuntimeException("File not accessible!");
+        }
+        return new FileResponseDto(
+            file.getName(), 
+            file.getSize(), 
+            file.getCreateTime(), 
+            file.getChangTime(), 
+            file.getUser().getEmail()
+        );
     }
 
     @Transactional
-    public void deleteFile(Long id) {
+    public void deleteFile(Long id, User activeUser) {
         File deleteFile = fileRepository.findById(id).orElseThrow(() -> new RuntimeException("File not found"));
-        java.io.File fileOnDisk = new java.io.File(uploadDir + java.io.File.separator + deleteFile.getName());
+        if (!deleteFile.getUser().getId().equals(activeUser.getId())) {
+            throw new RuntimeException("File not accessible!");
+        }
+        java.io.File fileOnDisk = new java.io.File(directory + java.io.File.separator + deleteFile.getName());
         fileOnDisk.delete();
         fileRepository.deleteById(id);
         System.out.println("File deleted successfully!");

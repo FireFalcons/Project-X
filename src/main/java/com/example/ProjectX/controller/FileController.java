@@ -3,6 +3,7 @@ package com.example.ProjectX.controller;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.ProjectX.dto.FileResponseDto;
+import com.example.ProjectX.model.User;
 import com.example.ProjectX.service.FileService;
 
 import lombok.RequiredArgsConstructor;
@@ -22,30 +24,27 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("api/files")
 public class FileController {
     private final FileService fileService;
-    
-    @GetMapping()
-    public String validation() {
-        return "";
-    }
 
     @PostMapping("/upload")
-    public FileResponseDto uploadFile(@RequestParam("file") MultipartFile file) throws IOException {
-        return fileService.save(file);
+    public FileResponseDto uploadFile(@RequestParam("file") MultipartFile file, 
+                                      @AuthenticationPrincipal User user) throws IOException {
+        
+        return fileService.save(file, user);
     }
 
-    @GetMapping("/get")
-    public List<FileResponseDto> getAll() {
-        return fileService.getAll();
+    @GetMapping()
+    public List<FileResponseDto> getAll(@AuthenticationPrincipal User user) {
+        return fileService.getAll(user);
     }
 
-    @GetMapping("/get/{id}")
-    public FileResponseDto getById(@PathVariable Long id) {
-        return fileService.findById(id);
+    @GetMapping("/{id}")
+    public FileResponseDto getById(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        return fileService.findById(id, user);
     }
 
-    @DeleteMapping("/delete/{id}")
-    public void deleteFile(@PathVariable Long id) {
-        fileService.deleteFile(id);
+    @DeleteMapping("/{id}")
+    public void deleteFile(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        fileService.deleteFile(id, user);
     }
 
 }
