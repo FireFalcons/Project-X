@@ -1,6 +1,7 @@
 package com.example.ProjectX.model;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,11 +21,13 @@ import lombok.Setter;
 @Table(name = "Files")
 public class File {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
     
+    private String originalName;
+
     @Column(unique = true)
-    private String name;
+    private String generatedName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "createdBy", nullable = false)

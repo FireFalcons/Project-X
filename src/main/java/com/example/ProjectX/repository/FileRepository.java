@@ -1,12 +1,13 @@
 package com.example.ProjectX.repository;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.example.ProjectX.model.File;
 import com.example.ProjectX.model.User;
 
-public interface FileRepository extends JpaRepository<File, Long>{
+public interface FileRepository extends JpaRepository<File, UUID> {
     List<File> findAllByUser(User user);
 }

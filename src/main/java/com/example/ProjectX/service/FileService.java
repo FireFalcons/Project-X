@@ -1,10 +1,17 @@
 package com.example.ProjectX.service;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,6 +34,7 @@ public class FileService {
         if (!dir.exists()) {
             dir.mkdirs();
         }
+
         String originalName = file.getOriginalFilename();
         Long fileSize = file.getSize();
         LocalDateTime now = LocalDateTime.now();
@@ -35,7 +43,8 @@ public class FileService {
         String generatedName = UUID.randomUUID().toString() + extension;
 
         File entity = new File();
-        entity.setName(generatedName);
+        entity.setOriginalName(originalName);
+        entity.setGeneratedName(generatedName);
         entity.setUser(activeUser);
         entity.setSize(fileSize);
         entity.setCreateTime(now);
@@ -45,13 +54,14 @@ public class FileService {
         file.transferTo(dest);
         fileRepository.save(entity);
 
-        return new FileResponseDto(generatedName, fileSize, now, now, activeUser.getEmail());
+        return new FileResponseDto(entity.getId(),originalName.substring(0, originalName.lastIndexOf(".")), fileSize, now, now, activeUser.getEmail());
     }
 
     public List<FileResponseDto> getAll(User activeUser) {
         return fileRepository.findAllByUser(activeUser).stream().map(
             f -> new FileResponseDto(
-                f.getName(), 
+                f.getId(),
+                f.getOriginalName(), 
                 f.getSize(), 
                 f.getCreateTime(), 
                 f.getChangTime(), 
@@ -59,13 +69,11 @@ public class FileService {
             )).toList();
     }
 
-    public FileResponseDto findById(Long id, User activeUser) {
-        File file = fileRepository.findById(id).orElseThrow(() -> new RuntimeException("File not found"));
-        if (!file.getUser().getId().equals(activeUser.getId())) {
-            throw new RuntimeException("File not accessible!");
-        }
+    public FileResponseDto findById(UUID id, User activeUser) {
+        File file = getRightAccess(activeUser, id);
         return new FileResponseDto(
-            file.getName(), 
+            file.getId(),
+            file.getOriginalName(), 
             file.getSize(), 
             file.getCreateTime(), 
             file.getChangTime(), 
@@ -74,14 +82,37 @@ public class FileService {
     }
 
     @Transactional
-    public void deleteFile(Long id, User activeUser) {
-        File deleteFile = fileRepository.findById(id).orElseThrow(() -> new RuntimeException("File not found"));
-        if (!deleteFile.getUser().getId().equals(activeUser.getId())) {
-            throw new RuntimeException("File not accessible!");
-        }
-        java.io.File fileOnDisk = new java.io.File(directory + java.io.File.separator + deleteFile.getName());
+    public void deleteFile(UUID id, User activeUser) {
+        File deleteFile = getRightAccess(activeUser, id);
+        java.io.File fileOnDisk = new java.io.File(directory + java.io.File.separator + deleteFile.getGeneratedName());
         fileOnDisk.delete();
         fileRepository.deleteById(id);
         System.out.println("File deleted successfully!");
+    }
+
+    public ResponseEntity<Resource> downloadFile(UUID id, User activeUser) {
+        File file = getRightAccess(activeUser, id);
+        try {
+            Path filePatch = Paths.get(directory).resolve(file.getGeneratedName()).normalize();
+            Resource resource = new UrlResource(filePatch.toUri());
+            if (resource.exists() && resource.isReadable()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getOriginalName() + "\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    public File getRightAccess(User activeUser, UUID id) {
+        File file = fileRepository.findById(id).orElseThrow(() -> new RuntimeException("Access denied!"));
+        if (!file.getUser().getId().equals(activeUser.getId())) {
+            throw new RuntimeException("File not accessible!");
+        }
+        return file;
     }
 }
