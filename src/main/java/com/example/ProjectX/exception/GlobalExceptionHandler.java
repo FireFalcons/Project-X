@@ -12,11 +12,9 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import com.example.ProjectX.exception.file.AccessibleRefusedException;
-import com.example.ProjectX.exception.file.FileNotFoundException;
+import com.example.ProjectX.exception.file.NotFoundException;
 import com.example.ProjectX.exception.filter.InvalidTokenException;
 import com.example.ProjectX.exception.login.EmailFoundException;
-import com.example.ProjectX.exception.login.PasswordException;
 import com.example.ProjectX.exception.register.AuthException;
 
 import lombok.extern.slf4j.Slf4j;
@@ -36,15 +34,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-                       PasswordException.class, 
                        MissingServletRequestParameterException.class,
                        MissingServletRequestPartException.class, 
                        MethodArgumentTypeMismatchException.class, 
                        NoResourceFoundException.class
                     })
-    public ResponseEntity<ErrorResponseDto> handlerBedRequestException(Exception ex) {
+    public ResponseEntity<ErrorResponseDto> handlerSystemBadRequestException(Exception ex) {
         String message = switch (ex) {
-            case PasswordException p -> "Incorrect password!";
             case MissingServletRequestParameterException e -> "Invalid query parameters!";
             case MissingServletRequestPartException p -> "No file attached to request";
             case MethodArgumentTypeMismatchException m -> "Incorrectly specified id";
@@ -54,8 +50,13 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message);
     }
 
-    @ExceptionHandler({FileNotFoundException.class, AccessibleRefusedException.class})
-    public ResponseEntity<ErrorResponseDto> handlerNot_FoundException(RuntimeException ex) {
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponseDto> handlerBadRequest(BadRequestException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponseDto> handlerNot_FoundException(NotFoundException ex) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 

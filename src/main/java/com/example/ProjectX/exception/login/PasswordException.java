@@ -1,7 +1,8 @@
 package com.example.ProjectX.exception.login;
 
-public class PasswordException extends RuntimeException {
+import com.example.ProjectX.exception.BadRequestException;
 
+public class PasswordException extends BadRequestException {
     public PasswordException(String message) {
         super(message);
     }
