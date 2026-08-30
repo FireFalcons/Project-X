@@ -35,7 +35,7 @@ public class FileController {
         return fileService.save(file, user);
     }
 
-    @GetMapping("/download")
+    @GetMapping("/{id}/download")
     public ResponseEntity<Resource> downloadFile(@RequestParam UUID id, @AuthenticationPrincipal User user) {
         return fileService.downloadFile(id, user);
     }
