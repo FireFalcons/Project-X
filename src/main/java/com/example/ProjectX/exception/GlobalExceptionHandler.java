@@ -44,11 +44,11 @@ public class GlobalExceptionHandler {
                     })
     public ResponseEntity<ErrorResponseDto> handlerBedRequestException(Exception ex) {
         String message = switch (ex) {
-            case PasswordException _ -> "Incorrect password!";
-            case MissingServletRequestParameterException _ -> "Invalid query parameters!";
-            case MissingServletRequestPartException _ -> "No file attached to request";
-            case MethodArgumentTypeMismatchException _ -> "Incorrectly specified id";
-            case NoResourceFoundException _ -> "Request failed! Cannot access a non-existent request";
+            case PasswordException p -> "Incorrect password!";
+            case MissingServletRequestParameterException e -> "Invalid query parameters!";
+            case MissingServletRequestPartException p -> "No file attached to request";
+            case MethodArgumentTypeMismatchException m -> "Incorrectly specified id";
+            case NoResourceFoundException f -> "Request failed! Cannot access a non-existent request";
             default -> "Something went wrong with request layout";
         };
         return buildResponse(HttpStatus.BAD_REQUEST, message);

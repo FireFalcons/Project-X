@@ -36,7 +36,7 @@ public class FileController {
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<Resource> downloadFile(@RequestParam UUID id, @AuthenticationPrincipal User user) {
+    public ResponseEntity<Resource> downloadFile(@PathVariable UUID id, @AuthenticationPrincipal User user) {
         return fileService.downloadFile(id, user);
     }
 
