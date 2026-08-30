@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.ProjectX.dto.FileResponseDto;
+import com.example.ProjectX.exception.file.AccessibleRefusedException;
+import com.example.ProjectX.exception.file.FileNotFoundException;
 import com.example.ProjectX.model.File;
 import com.example.ProjectX.model.User;
 import com.example.ProjectX.repository.FileRepository;
@@ -70,7 +72,7 @@ public class FileService {
     }
 
     public FileResponseDto findById(UUID id, User activeUser) {
-        File file = getRightAccess(activeUser, id);
+        File file = getValidatedFile(activeUser, id);
         return new FileResponseDto(
             file.getId(),
             file.getOriginalName(), 
@@ -83,7 +85,7 @@ public class FileService {
 
     @Transactional
     public void deleteFile(UUID id, User activeUser) {
-        File deleteFile = getRightAccess(activeUser, id);
+        File deleteFile = getValidatedFile(activeUser, id);
         java.io.File fileOnDisk = new java.io.File(directory + java.io.File.separator + deleteFile.getGeneratedName());
         fileOnDisk.delete();
         fileRepository.deleteById(id);
@@ -91,7 +93,7 @@ public class FileService {
     }
 
     public ResponseEntity<Resource> downloadFile(UUID id, User activeUser) {
-        File file = getRightAccess(activeUser, id);
+        File file = getValidatedFile(activeUser, id);
         try {
             Path filePatch = Paths.get(directory).resolve(file.getGeneratedName()).normalize();
             Resource resource = new UrlResource(filePatch.toUri());
@@ -108,10 +110,10 @@ public class FileService {
         }
     }
 
-    public File getRightAccess(User activeUser, UUID id) {
-        File file = fileRepository.findById(id).orElseThrow(() -> new RuntimeException("Access denied!"));
+    public File getValidatedFile(User activeUser, UUID id) {
+        File file = fileRepository.findById(id).orElseThrow(() -> new FileNotFoundException("File not found!"));
         if (!file.getUser().getId().equals(activeUser.getId())) {
-            throw new RuntimeException("File not accessible!");
+            throw new AccessibleRefusedException("File access denied!");
         }
         return file;
     }
