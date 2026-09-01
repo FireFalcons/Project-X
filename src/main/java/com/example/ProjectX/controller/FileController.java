@@ -40,9 +40,13 @@ public class FileController {
         return fileService.downloadFile(id, user);
     }
 
-    @GetMapping()
-    public List<FileResponseDto> getAll(@AuthenticationPrincipal User user) {
-        return fileService.getAll(user);
+    @GetMapping
+    public List<FileResponseDto> getAll(@AuthenticationPrincipal User user,
+                                        @RequestParam(required = false) Long minSize,
+                                        @RequestParam(required = false) Long maxSize,
+                                        @RequestParam(required = false) String name) {
+
+        return fileService.getAll(user, minSize, maxSize, name);
     }
 
     @GetMapping("/{id}")

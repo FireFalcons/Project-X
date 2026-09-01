@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -43,6 +44,7 @@ public class GlobalExceptionHandler {
         String message = switch (ex) {
             case MissingServletRequestParameterException e -> "Invalid query parameters!";
             case MissingServletRequestPartException p -> "No file attached to request";
+            case MultipartException h -> "";
             case MethodArgumentTypeMismatchException m -> "Incorrectly specified id";
             case NoResourceFoundException f -> "Request failed! Cannot access a non-existent request";
             default -> "Something went wrong with request layout";

@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,8 @@ import com.example.ProjectX.exception.file.FileNotFoundException;
 import com.example.ProjectX.model.File;
 import com.example.ProjectX.model.User;
 import com.example.ProjectX.repository.FileRepository;
+import com.example.ProjectX.specification.FileSpecification;
+import com.example.ProjectX.specification.SearchCriteria;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -59,8 +62,11 @@ public class FileService {
         return new FileResponseDto(entity.getId(),originalName.substring(0, originalName.lastIndexOf(".")), fileSize, now, now, activeUser.getEmail());
     }
 
-    public List<FileResponseDto> getAll(User activeUser) {
-        return fileRepository.findAllByUser(activeUser).stream().map(
+    public List<FileResponseDto> getAll(User activeUser, Long minSize, Long maxSize, String name) {
+        Specification<File> spec = (root, query, cb) -> cb.equal(root.get("user"), activeUser);
+        spec = filterFiles(spec, minSize, maxSize, name);
+
+        return fileRepository.findAll(spec).stream().map(
             f -> new FileResponseDto(
                 f.getId(),
                 f.getOriginalName(), 
@@ -69,6 +75,27 @@ public class FileService {
                 f.getChangTime(), 
                 f.getUser().getEmail()
             )).toList();
+    }
+
+    public Specification<File> filterFiles(Specification<File> spec, Long minSize, Long maxSize, String name) {
+        if (minSize != null) {
+            SearchCriteria criteria = new SearchCriteria("size", ">", minSize);
+            FileSpecification fileSpec = new FileSpecification(criteria);
+            spec = spec.and(fileSpec);
+        }
+
+        if (maxSize != null) {
+            SearchCriteria criteria = new SearchCriteria("size", "<", maxSize);
+            FileSpecification fileSpec = new FileSpecification(criteria);
+            spec = spec.and(fileSpec);
+        }
+
+        if (name != null) {
+            SearchCriteria criteria = new SearchCriteria("originalName", ":", name);
+            FileSpecification fileSpec = new FileSpecification(criteria);
+            spec = spec.and(fileSpec);
+        }
+        return spec;
     }
 
     public FileResponseDto findById(UUID id, User activeUser) {
