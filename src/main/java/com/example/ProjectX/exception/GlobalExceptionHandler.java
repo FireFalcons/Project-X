@@ -44,7 +44,7 @@ public class GlobalExceptionHandler {
         String message = switch (ex) {
             case MissingServletRequestParameterException e -> "Invalid query parameters!";
             case MissingServletRequestPartException p -> "No file attached to request";
-            case MultipartException h -> "";
+            case MultipartException h -> "Inappropriate request!";
             case MethodArgumentTypeMismatchException m -> "Incorrectly specified id";
             case NoResourceFoundException f -> "Request failed! Cannot access a non-existent request";
             default -> "Something went wrong with request layout";

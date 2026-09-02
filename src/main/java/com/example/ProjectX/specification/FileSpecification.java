@@ -44,6 +44,7 @@ public class FileSpecification implements Specification<File> {
                         "%" + criteria.getValue() + "%");
                 }
             }
+            
             return null;
     }
 }

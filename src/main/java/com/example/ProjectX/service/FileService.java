@@ -59,7 +59,9 @@ public class FileService {
         file.transferTo(dest);
         fileRepository.save(entity);
 
-        return new FileResponseDto(entity.getId(),originalName.substring(0, originalName.lastIndexOf(".")), fileSize, now, now, activeUser.getEmail());
+        String size = getCalculatedSize(fileSize);
+
+        return new FileResponseDto(entity.getId(),originalName.substring(0, originalName.lastIndexOf(".")), size, now, now, activeUser.getEmail());
     }
 
     public List<FileResponseDto> getAll(User activeUser, Long minSize, Long maxSize, String name) {
@@ -70,7 +72,7 @@ public class FileService {
             f -> new FileResponseDto(
                 f.getId(),
                 f.getOriginalName(), 
-                f.getSize(), 
+                getCalculatedSize(f.getSize()), 
                 f.getCreateTime(), 
                 f.getChangTime(), 
                 f.getUser().getEmail()
@@ -100,10 +102,11 @@ public class FileService {
 
     public FileResponseDto findById(UUID id, User activeUser) {
         File file = getValidatedFile(activeUser, id);
+        String size = getCalculatedSize(file.getSize());
         return new FileResponseDto(
             file.getId(),
             file.getOriginalName(), 
-            file.getSize(), 
+            size, 
             file.getCreateTime(), 
             file.getChangTime(), 
             file.getUser().getEmail()
@@ -143,5 +146,25 @@ public class FileService {
             throw new AccessibleRefusedException("File access denied!");
         }
         return file;
+    }
+    
+    public String getCalculatedSize(Long size) {
+        double result;
+
+        if (size < 1024) {
+            return size + "B";
+        }
+
+        if ((size / 1024) < 1024) {
+            result = size / 1024.0;
+            return String.format("%.2f", result) + " KB";
+        }
+
+        if ((size / 1048576) < 1024) {
+            result = size / 1048576.0;
+            return String.format("%.2f", result) + " MB";
+        }
+        result = size / 1073741824.0;
+        return String.format("%.2f", result) + " GB";
     }
 }
