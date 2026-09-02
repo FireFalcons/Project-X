@@ -1,5 +1,7 @@
 package com.example.ProjectX.specification;
 
+import java.time.LocalDate;
+
 import org.springframework.data.jpa.domain.Specification;
 
 import com.example.ProjectX.model.File;
@@ -24,17 +26,23 @@ public class FileSpecification implements Specification<File> {
         ) {
         
             if (criteria.getOperation().equalsIgnoreCase(">")) {
+                if (criteria.getValue() instanceof LocalDate localDate) {
+                    return criteriaBuilder.greaterThanOrEqualTo(root.get(criteria.getKey()), localDate);
+                }
+
                 return criteriaBuilder.greaterThanOrEqualTo(
-                    root.get(criteria.getKey()), 
-                    Long.valueOf(criteria.getValue().toString())
-                );
+                       root.get(criteria.getKey()), 
+                       Long.valueOf(criteria.getValue().toString()));
             } 
             
             if (criteria.getOperation().equalsIgnoreCase("<")) {
+                if (criteria.getValue() instanceof LocalDate localDate) {
+                    return criteriaBuilder.lessThanOrEqualTo(root.get(criteria.getKey()), localDate);
+                }
+
                 return criteriaBuilder.lessThanOrEqualTo(
                     root.get(criteria.getKey()), 
-                    Long.valueOf(criteria.getValue().toString())
-                );
+                    Long.valueOf(criteria.getValue().toString()));
             }
 
             if (criteria.getOperation().equalsIgnoreCase(":")) {
@@ -44,7 +52,6 @@ public class FileSpecification implements Specification<File> {
                         "%" + criteria.getValue() + "%");
                 }
             }
-            
-            return null;
+        return null;
     }
 }

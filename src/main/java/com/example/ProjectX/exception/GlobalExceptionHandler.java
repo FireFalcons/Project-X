@@ -42,10 +42,18 @@ public class GlobalExceptionHandler {
                     })
     public ResponseEntity<ErrorResponseDto> handlerSystemBadRequestException(Exception ex) {
         String message = switch (ex) {
+            case MethodArgumentTypeMismatchException t -> {
+                if ("dateStart".equals(t.getName()) || "dateEnd".equals(t.getName())) {
+                    yield "Incorrect date format! Expected format: YYYY-MM-DD";
+                }
+                if ("id".equals(t.getName())) {
+                    yield "Incorrectly specified id format!";
+                }
+                yield "Invalid format for parameter: " + t.getName();
+            }
             case MissingServletRequestParameterException e -> "Invalid query parameters!";
             case MissingServletRequestPartException p -> "No file attached to request";
             case MultipartException h -> "Inappropriate request!";
-            case MethodArgumentTypeMismatchException m -> "Incorrectly specified id";
             case NoResourceFoundException f -> "Request failed! Cannot access a non-existent request";
             default -> "Something went wrong with request layout";
         };

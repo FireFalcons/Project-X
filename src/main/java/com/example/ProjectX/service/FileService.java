@@ -3,6 +3,7 @@ package com.example.ProjectX.service;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -64,9 +65,9 @@ public class FileService {
         return new FileResponseDto(entity.getId(),originalName.substring(0, originalName.lastIndexOf(".")), size, now, now, activeUser.getEmail());
     }
 
-    public List<FileResponseDto> getAll(User activeUser, Long minSize, Long maxSize, String name) {
+    public List<FileResponseDto> getAll(User activeUser, Long minSize, Long maxSize, String name, LocalDate dateStart, LocalDate dateEnd) {
         Specification<File> spec = (root, query, cb) -> cb.equal(root.get("user"), activeUser);
-        spec = filterFiles(spec, minSize, maxSize, name);
+        spec = filterFiles(spec, minSize, maxSize, name, dateStart, dateEnd);
 
         return fileRepository.findAll(spec).stream().map(
             f -> new FileResponseDto(
@@ -79,7 +80,7 @@ public class FileService {
             )).toList();
     }
 
-    public Specification<File> filterFiles(Specification<File> spec, Long minSize, Long maxSize, String name) {
+    public Specification<File> filterFiles(Specification<File> spec, Long minSize, Long maxSize, String name, LocalDate dateStart, LocalDate dateEnd) {
         if (minSize != null) {
             SearchCriteria criteria = new SearchCriteria("size", ">", minSize);
             FileSpecification fileSpec = new FileSpecification(criteria);
@@ -94,6 +95,18 @@ public class FileService {
 
         if (name != null) {
             SearchCriteria criteria = new SearchCriteria("originalName", ":", name);
+            FileSpecification fileSpec = new FileSpecification(criteria);
+            spec = spec.and(fileSpec);
+        }
+
+        if (dateStart != null) {
+            SearchCriteria criteria = new SearchCriteria("createTime", ">", dateStart);
+            FileSpecification fileSpec = new FileSpecification(criteria);
+            spec = spec.and(fileSpec);
+        }
+
+        if (dateEnd != null) {
+            SearchCriteria criteria = new SearchCriteria("createTime", "<", dateEnd);
             FileSpecification fileSpec = new FileSpecification(criteria);
             spec = spec.and(fileSpec);
         }

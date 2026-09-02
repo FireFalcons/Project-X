@@ -1,10 +1,12 @@
 package com.example.ProjectX.controller;
 
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.core.io.Resource;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,9 +46,11 @@ public class FileController {
     public List<FileResponseDto> getAll(@AuthenticationPrincipal User user,
                                         @RequestParam(required = false) Long minSize,
                                         @RequestParam(required = false) Long maxSize,
-                                        @RequestParam(required = false) String name) {
+                                        @RequestParam(required = false) String name,
+                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateStart,
+                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEnd) {
 
-        return fileService.getAll(user, minSize, maxSize, name);
+        return fileService.getAll(user, minSize, maxSize, name, dateStart, dateEnd);
     }
 
     @GetMapping("/{id}")
