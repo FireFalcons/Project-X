@@ -1,6 +1,7 @@
 package com.example.ProjectX.service;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -20,7 +21,9 @@ import org.springframework.web.multipart.MultipartFile;
 import com.example.ProjectX.dto.FileResponseDto;
 import com.example.ProjectX.exception.file.AccessibleRefusedException;
 import com.example.ProjectX.exception.file.FileNotFoundException;
+import com.example.ProjectX.exception.file.InvalidSizeFormatException;
 import com.example.ProjectX.model.File;
+import com.example.ProjectX.model.Role;
 import com.example.ProjectX.model.User;
 import com.example.ProjectX.repository.FileRepository;
 import com.example.ProjectX.specification.FileSpecification;
@@ -65,9 +68,28 @@ public class FileService {
         return new FileResponseDto(entity.getId(),originalName.substring(0, originalName.lastIndexOf(".")), size, now, now, activeUser.getEmail());
     }
 
-    public List<FileResponseDto> getAll(User activeUser, Long minSize, Long maxSize, String name, LocalDate dateStart, LocalDate dateEnd) {
-        Specification<File> spec = (root, query, cb) -> cb.equal(root.get("user"), activeUser);
-        spec = filterFiles(spec, minSize, maxSize, name, dateStart, dateEnd);
+    public List<FileResponseDto> getAll(
+                User activeUser, 
+                String minSize, 
+                String maxSize, 
+                String name, 
+                LocalDate dateStart, 
+                LocalDate dateEnd,
+                LocalDateTime dateTimeStart,
+                LocalDateTime dateTimeEnd) {
+
+        Specification<File> spec;
+
+        Long minSizeFile = (minSize != null) ? getConverterSize(minSize) : null;
+        Long maxSizeFile = (maxSize != null) ? getConverterSize(maxSize) : null;
+
+        if (activeUser.getRole().equals(Role.USER)) {
+            spec = (root, query, cb) -> cb.equal(root.get("user"), activeUser); 
+        } else {
+            spec = (root, query, cb) -> cb.conjunction();
+        }
+        
+        spec = filterFiles(spec, minSizeFile, maxSizeFile, name, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
 
         return fileRepository.findAll(spec).stream().map(
             f -> new FileResponseDto(
@@ -80,7 +102,16 @@ public class FileService {
             )).toList();
     }
 
-    public Specification<File> filterFiles(Specification<File> spec, Long minSize, Long maxSize, String name, LocalDate dateStart, LocalDate dateEnd) {
+    public Specification<File> filterFiles(
+                Specification<File> spec, 
+                Long minSize, 
+                Long maxSize, 
+                String name, 
+                LocalDate dateStart, 
+                LocalDate dateEnd, 
+                LocalDateTime dateTimeStart, 
+                LocalDateTime dateTimeEnd) {
+
         if (minSize != null) {
             SearchCriteria criteria = new SearchCriteria("size", ">", minSize);
             FileSpecification fileSpec = new FileSpecification(criteria);
@@ -110,6 +141,19 @@ public class FileService {
             FileSpecification fileSpec = new FileSpecification(criteria);
             spec = spec.and(fileSpec);
         }
+
+        if (dateTimeStart != null) {
+            SearchCriteria criteria = new SearchCriteria("createTime", ">", dateTimeStart);
+            FileSpecification fileSpec = new FileSpecification(criteria);
+            spec = spec.and(fileSpec);
+        }
+
+        if (dateTimeEnd != null) {
+            SearchCriteria criteria = new SearchCriteria("createTime", "<", dateTimeEnd);
+            FileSpecification fileSpec = new FileSpecification(criteria);
+            spec = spec.and(fileSpec);
+        }
+        
         return spec;
     }
 
@@ -148,7 +192,7 @@ public class FileService {
             } else {
                 return ResponseEntity.notFound().build();
             }
-        } catch (Exception e) {
+        } catch (MalformedURLException e) {
             return ResponseEntity.internalServerError().build();
         }
     }
@@ -170,14 +214,30 @@ public class FileService {
 
         if ((size / 1024) < 1024) {
             result = size / 1024.0;
-            return String.format("%.2f", result) + " KB";
+            return String.format("%.2f", result) + "KB";
         }
 
         if ((size / 1048576) < 1024) {
             result = size / 1048576.0;
-            return String.format("%.2f", result) + " MB";
+            return String.format("%.2f", result) + "MB";
         }
         result = size / 1073741824.0;
-        return String.format("%.2f", result) + " GB";
+        return String.format("%.2f", result) + "GB";
+    }
+
+    public Long getConverterSize (String size) {
+        String type = size.substring(size.length() - 2).toUpperCase();
+        if (!type.matches("\\p{L}+")) {
+            throw new InvalidSizeFormatException("Invalid size format!");
+        }
+        
+        Double result = Double.valueOf(size.substring(0, size.length() - 2));
+
+        switch (type) {
+            case "KB" -> result *= 1024.0;
+            case "MB" -> result *= 1048576.0;
+            case "GB" -> result *= 1073741824.0;
+        }
+        return result.longValue();
     }
 }

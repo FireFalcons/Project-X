@@ -2,6 +2,7 @@ package com.example.ProjectX.controller;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,13 +45,15 @@ public class FileController {
 
     @GetMapping
     public List<FileResponseDto> getAll(@AuthenticationPrincipal User user,
-                                        @RequestParam(required = false) Long minSize,
-                                        @RequestParam(required = false) Long maxSize,
+                                        @RequestParam(required = false) String minSize,
+                                        @RequestParam(required = false) String maxSize,
                                         @RequestParam(required = false) String name,
                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateStart,
-                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEnd) {
+                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEnd,
+                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTimeStart,
+                                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTimeEnd) {
 
-        return fileService.getAll(user, minSize, maxSize, name, dateStart, dateEnd);
+        return fileService.getAll(user, minSize, maxSize, name, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
     }
 
     @GetMapping("/{id}")

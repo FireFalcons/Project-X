@@ -1,12 +1,16 @@
 package com.example.ProjectX.service;
 
+import java.util.List;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.example.ProjectX.dto.UserResponseDto;
 import com.example.ProjectX.dto.login.UserLoginRequestDto;
 import com.example.ProjectX.dto.login.UserLoginResponseDto;
 import com.example.ProjectX.dto.register.UserRegistrationRequestDto;
 import com.example.ProjectX.dto.register.UserRegistrationResponseDto;
+import com.example.ProjectX.exception.file.AccessibleRefusedException;
 import com.example.ProjectX.exception.login.EmailFoundException;
 import com.example.ProjectX.exception.login.PasswordException;
 import com.example.ProjectX.exception.register.AuthException;
@@ -36,6 +40,18 @@ public class UserService {
         String hashedPassword = passwordEncoder.encode(user.password());
         User savedUser = userRepository.save(toEntity(user, hashedPassword));
         return toResponseDto(savedUser);
+    }
+
+    public List<UserResponseDto> getAllUsers(User activeUser) {
+        if (activeUser.getRole().equals(Role.ADMIN)) {
+            return userRepository.findAll().stream().map(
+                u -> new UserResponseDto(
+                    u.getId(),
+                    u.getEmail(), 
+                    u.getRole())
+            ).toList();
+        }
+        throw new AccessibleRefusedException("Page not found!");
     }
 
     private User toEntity(UserRegistrationRequestDto requestDto, String hashedPassword) {

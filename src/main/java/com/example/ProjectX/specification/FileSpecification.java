@@ -1,6 +1,7 @@
 package com.example.ProjectX.specification;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.springframework.data.jpa.domain.Specification;
 
@@ -30,6 +31,10 @@ public class FileSpecification implements Specification<File> {
                     return criteriaBuilder.greaterThanOrEqualTo(root.get(criteria.getKey()), localDate);
                 }
 
+                if (criteria.getValue() instanceof LocalDateTime localDateTime) {
+                    return criteriaBuilder.greaterThanOrEqualTo(root.get(criteria.getKey()), localDateTime);
+                }
+
                 return criteriaBuilder.greaterThanOrEqualTo(
                        root.get(criteria.getKey()), 
                        Long.valueOf(criteria.getValue().toString()));
@@ -38,6 +43,10 @@ public class FileSpecification implements Specification<File> {
             if (criteria.getOperation().equalsIgnoreCase("<")) {
                 if (criteria.getValue() instanceof LocalDate localDate) {
                     return criteriaBuilder.lessThanOrEqualTo(root.get(criteria.getKey()), localDate);
+                }
+
+                if (criteria.getValue() instanceof LocalDateTime localDateTime) {
+                    return criteriaBuilder.lessThanOrEqualTo(root.get(criteria.getKey()), localDateTime);
                 }
 
                 return criteriaBuilder.lessThanOrEqualTo(

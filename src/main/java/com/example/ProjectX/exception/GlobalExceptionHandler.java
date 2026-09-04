@@ -1,5 +1,6 @@
 package com.example.ProjectX.exception;
 
+import java.net.MalformedURLException;
 import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
@@ -46,11 +47,16 @@ public class GlobalExceptionHandler {
                 if ("dateStart".equals(t.getName()) || "dateEnd".equals(t.getName())) {
                     yield "Incorrect date format! Expected format: YYYY-MM-DD";
                 }
+                if ("dateTimeStart".equals(t.getName()) || "dateTimeEnd".equals(t.getName())) {
+                    yield "Incorrect date-time format! Expected format: YYYY-MM-DDTHH:MM:SS";
+                }
                 if ("id".equals(t.getName())) {
                     yield "Incorrectly specified id format!";
                 }
                 yield "Invalid format for parameter: " + t.getName();
             }
+            
+            case MalformedURLException u -> "Incorrect or unclear URL format";
             case MissingServletRequestParameterException e -> "Invalid query parameters!";
             case MissingServletRequestPartException p -> "No file attached to request";
             case MultipartException h -> "Inappropriate request!";
