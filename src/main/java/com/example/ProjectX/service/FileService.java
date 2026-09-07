@@ -226,18 +226,28 @@ public class FileService {
     }
 
     public Long getConverterSize (String size) {
-        String type = size.substring(size.length() - 2).toUpperCase();
-        if (!type.matches("\\p{L}+")) {
-            throw new InvalidSizeFormatException("Invalid size format!");
+        try{
+            Double result = 0.0;
+            if (size.trim().length() < 3) {
+                return Long.valueOf(size);
+            }
+    
+            String type = size.substring(size.length() - 2).toUpperCase();
+            if (type.matches("\\p{L}+")) {
+                result = Double.valueOf(size.substring(0, size.length() - 2));
+                switch (type) {
+                    case "BB" -> result.longValue();
+                    case "KB" -> result *= 1024.0;
+                    case "MB" -> result *= 1048576.0;
+                    case "GB" -> result *= 1073741824.0;
+                    default -> throw new InvalidSizeFormatException("Invalid type format! Expected format: BB, KB, MB, GB");
+                }
+            } else {
+                result = Double.valueOf(size);
+            }
+            return result.longValue();
+        } catch (NumberFormatException ex) {
+            throw new InvalidSizeFormatException("Incorrectly set filter parameter!");
         }
-        
-        Double result = Double.valueOf(size.substring(0, size.length() - 2));
-
-        switch (type) {
-            case "KB" -> result *= 1024.0;
-            case "MB" -> result *= 1048576.0;
-            case "GB" -> result *= 1073741824.0;
-        }
-        return result.longValue();
     }
 }
