@@ -43,29 +43,31 @@ public class FileService {
         if (!dir.exists()) {
             dir.mkdirs();
         }
-
         String originalName = file.getOriginalFilename();
         Long fileSize = file.getSize();
         LocalDateTime now = LocalDateTime.now();
-
-        String extension = originalName.substring(originalName.lastIndexOf("."));
-        String generatedName = UUID.randomUUID().toString() + extension;
+        
+        String extension = originalName.substring(originalName.lastIndexOf(".") + 1);
+        originalName = originalName.substring(0, originalName.lastIndexOf("."));
+        UUID fileId = UUID.randomUUID();
 
         File entity = new File();
-        entity.setOriginalName(originalName);
-        entity.setGeneratedName(generatedName);
-        entity.setUser(activeUser);
+        entity.setId(fileId);
+        entity.setName(originalName);
+        entity.setSysfName(fileId);
+        entity.setExtension(extension);
+        entity.setUserId(activeUser.getId());
         entity.setSize(fileSize);
         entity.setCreateTime(now);
 
-        java.io.File dest = new java.io.File(directory + java.io.File.separator + generatedName);
+        java.io.File dest = new java.io.File(directory + java.io.File.separator + fileId.toString() + extension);
 
         file.transferTo(dest);
         fileRepository.save(entity);
 
         String size = getCalculatedSize(fileSize);
 
-        return new FileResponseDto(entity.getId(),originalName.substring(0, originalName.lastIndexOf(".")), size, now, now, activeUser.getEmail());
+        return new FileResponseDto(entity.getId(), originalName, extension, size, now, now, activeUser.getId());
     }
 
     public List<FileResponseDto> getAll(
@@ -84,7 +86,7 @@ public class FileService {
         Long maxSizeFile = (maxSize != null) ? getConverterSize(maxSize) : null;
 
         if (activeUser.getRole().equals(Role.USER)) {
-            spec = (root, query, cb) -> cb.equal(root.get("user"), activeUser); 
+            spec = (root, query, cb) -> cb.equal(root.get("userId"), activeUser.getId()); 
         } else {
             spec = (root, query, cb) -> cb.conjunction();
         }
@@ -94,11 +96,12 @@ public class FileService {
         return fileRepository.findAll(spec).stream().map(
             f -> new FileResponseDto(
                 f.getId(),
-                f.getOriginalName(), 
+                f.getName(),
+                f.getExtension(), 
                 getCalculatedSize(f.getSize()), 
                 f.getCreateTime(), 
                 f.getChangTime(), 
-                f.getUser().getEmail()
+                f.getUserId()
             )).toList();
     }
 
@@ -162,18 +165,19 @@ public class FileService {
         String size = getCalculatedSize(file.getSize());
         return new FileResponseDto(
             file.getId(),
-            file.getOriginalName(), 
+            file.getName(),
+            file.getExtension(), 
             size, 
             file.getCreateTime(), 
             file.getChangTime(), 
-            file.getUser().getEmail()
+            file.getUserId()
         );
     }
 
     @Transactional
     public void deleteFile(UUID id, User activeUser) {
         File deleteFile = getValidatedFile(activeUser, id);
-        java.io.File fileOnDisk = new java.io.File(directory + java.io.File.separator + deleteFile.getGeneratedName());
+        java.io.File fileOnDisk = new java.io.File(directory + java.io.File.separator + deleteFile.getSysfName());
         fileOnDisk.delete();
         fileRepository.deleteById(id);
         System.out.println("File deleted successfully!");
@@ -182,12 +186,12 @@ public class FileService {
     public ResponseEntity<Resource> downloadFile(UUID id, User activeUser) {
         File file = getValidatedFile(activeUser, id);
         try {
-            Path filePatch = Paths.get(directory).resolve(file.getGeneratedName()).normalize();
+            Path filePatch = Paths.get(directory).resolve(file.getSysfName().toString()).normalize();
             Resource resource = new UrlResource(filePatch.toUri());
             if (resource.exists() && resource.isReadable()) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getOriginalName() + "\"")
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.getSysfName() + "\"")
                         .body(resource);
             } else {
                 return ResponseEntity.notFound().build();
@@ -199,7 +203,7 @@ public class FileService {
 
     public File getValidatedFile(User activeUser, UUID id) {
         File file = fileRepository.findById(id).orElseThrow(() -> new FileNotFoundException("File not found!"));
-        if (!file.getUser().getId().equals(activeUser.getId())) {
+        if (!file.getUserId().equals(activeUser.getId())) {
             throw new AccessibleRefusedException("File access denied!");
         }
         return file;

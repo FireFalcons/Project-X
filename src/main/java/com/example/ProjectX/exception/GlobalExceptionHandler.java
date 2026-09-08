@@ -55,6 +55,7 @@ public class GlobalExceptionHandler {
                 }
                 yield "Invalid format for parameter: " + t.getName();
             }
+            
             case MalformedURLException u -> "Incorrect or unclear URL format";
             case MissingServletRequestParameterException e -> "Invalid query parameters!";
             case MissingServletRequestPartException p -> "No file attached to request";

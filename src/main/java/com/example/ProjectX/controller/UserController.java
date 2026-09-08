@@ -23,22 +23,22 @@ import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/auth")
+@RequestMapping("api")
 public class UserController {
     private final UserService userService;
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/register")
+    @PostMapping("/auth/register")
     public UserRegistrationResponseDto register(@RequestBody UserRegistrationRequestDto requestDto) {
         return userService.register(requestDto);
     }
 
-    @PostMapping("/login")
+    @PostMapping("/auth/login")
     public UserLoginResponseDto login(@RequestBody UserLoginRequestDto requestDto) {
         return userService.login(requestDto);
     }
 
-    @GetMapping()
+    @GetMapping("/users")
     public List<UserResponseDto> getAll(@AuthenticationPrincipal User user) {
         return userService.getAllUsers(user);
     }
