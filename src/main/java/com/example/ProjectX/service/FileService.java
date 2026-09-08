@@ -74,7 +74,8 @@ public class FileService {
                 User activeUser, 
                 String minSize, 
                 String maxSize, 
-                String name, 
+                String name,
+                String extension, 
                 LocalDate dateStart, 
                 LocalDate dateEnd,
                 LocalDateTime dateTimeStart,
@@ -91,7 +92,7 @@ public class FileService {
             spec = (root, query, cb) -> cb.conjunction();
         }
         
-        spec = filterFiles(spec, minSizeFile, maxSizeFile, name, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
+        spec = filterFiles(spec, minSizeFile, maxSizeFile, name, extension, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
 
         return fileRepository.findAll(spec).stream().map(
             f -> new FileResponseDto(
@@ -109,7 +110,8 @@ public class FileService {
                 Specification<File> spec, 
                 Long minSize, 
                 Long maxSize, 
-                String name, 
+                String name,
+                String extension, 
                 LocalDate dateStart, 
                 LocalDate dateEnd, 
                 LocalDateTime dateTimeStart, 
@@ -128,7 +130,13 @@ public class FileService {
         }
 
         if (name != null) {
-            SearchCriteria criteria = new SearchCriteria("originalName", ":", name);
+            SearchCriteria criteria = new SearchCriteria("name", ":", name);
+            FileSpecification fileSpec = new FileSpecification(criteria);
+            spec = spec.and(fileSpec);
+        }
+
+        if (extension != null) {
+            SearchCriteria criteria = new SearchCriteria("extension", ":", extension);
             FileSpecification fileSpec = new FileSpecification(criteria);
             spec = spec.and(fileSpec);
         }
@@ -203,10 +211,11 @@ public class FileService {
 
     public File getValidatedFile(User activeUser, UUID id) {
         File file = fileRepository.findById(id).orElseThrow(() -> new FileNotFoundException("File not found!"));
-        if (!file.getUserId().equals(activeUser.getId())) {
-            throw new AccessibleRefusedException("File access denied!");
+        
+        if (file.getUserId().equals(activeUser.getId()) || activeUser.getRole().equals(Role.ADMIN)) {
+            return file;
         }
-        return file;
+        throw new AccessibleRefusedException("File access denied!");
     }
     
     public String getCalculatedSize(Long size) {

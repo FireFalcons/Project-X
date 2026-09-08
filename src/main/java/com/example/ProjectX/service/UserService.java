@@ -10,7 +10,6 @@ import com.example.ProjectX.dto.login.UserLoginRequestDto;
 import com.example.ProjectX.dto.login.UserLoginResponseDto;
 import com.example.ProjectX.dto.register.UserRegistrationRequestDto;
 import com.example.ProjectX.dto.register.UserRegistrationResponseDto;
-import com.example.ProjectX.exception.file.AccessibleRefusedException;
 import com.example.ProjectX.exception.login.EmailFoundException;
 import com.example.ProjectX.exception.login.PasswordException;
 import com.example.ProjectX.exception.register.AuthException;
@@ -43,15 +42,12 @@ public class UserService {
     }
 
     public List<UserResponseDto> getAllUsers(User activeUser) {
-        if (activeUser.getRole().equals(Role.ADMIN)) {
-            return userRepository.findAll().stream().map(
+        return userRepository.findAll().stream().map(
                 u -> new UserResponseDto(
                     u.getId(),
                     u.getEmail(), 
                     u.getRole())
-            ).toList();
-        }
-        throw new AccessibleRefusedException("Page not found!");
+                ).toList();
     }
 
     private User toEntity(UserRegistrationRequestDto requestDto, String hashedPassword) {

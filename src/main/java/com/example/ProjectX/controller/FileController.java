@@ -48,12 +48,13 @@ public class FileController {
                                         @RequestParam(required = false) String minSize,
                                         @RequestParam(required = false) String maxSize,
                                         @RequestParam(required = false) String name,
+                                        @RequestParam(required = false) String extension,
                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateStart,
                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEnd,
                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTimeStart,
                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTimeEnd) {
 
-        return fileService.getAll(user, minSize, maxSize, name, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
+        return fileService.getAll(user, minSize, maxSize, name, extension, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
     }
 
     @GetMapping("/{id}")
