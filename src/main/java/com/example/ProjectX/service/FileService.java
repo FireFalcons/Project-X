@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -76,6 +77,8 @@ public class FileService {
                 String maxSize,
                 String typeSize, 
                 String name,
+                String sortBy,
+                String sortDir,
                 String extension, 
                 LocalDate dateStart, 
                 LocalDate dateEnd,
@@ -95,7 +98,17 @@ public class FileService {
         
         spec = filterFiles(spec, minSizeFile, maxSizeFile, name, extension, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
 
-        return fileRepository.findAll(spec).stream().map(
+        Sort sort;
+        if (sortBy != null) {
+            sort = switch (sortDir.toUpperCase()) {
+                case "DESC" -> Sort.by(Sort.Direction.DESC, sortBy);
+                default -> Sort.by(Sort.Direction.ASC, sortBy);
+            };
+        } else {
+            sort = Sort.by(Sort.Direction.DESC, "createTime");
+        }
+        
+        return fileRepository.findAll(spec, sort).stream().map(
             f -> new FileResponseDto(
                 f.getId(),
                 f.getName(),
