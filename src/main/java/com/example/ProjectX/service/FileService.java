@@ -73,7 +73,8 @@ public class FileService {
     public List<FileResponseDto> getAll(
                 User activeUser, 
                 String minSize, 
-                String maxSize, 
+                String maxSize,
+                String typeSize, 
                 String name,
                 String extension, 
                 LocalDate dateStart, 
@@ -99,7 +100,7 @@ public class FileService {
                 f.getId(),
                 f.getName(),
                 f.getExtension(), 
-                getCalculatedSize(f.getSize()), 
+                typeSize != null ? getFormattedSizeInUnit(f.getSize(), typeSize) : getCalculatedSize(f.getSize()), 
                 f.getCreateTime(), 
                 f.getChangTime(), 
                 f.getUserId()
@@ -109,7 +110,7 @@ public class FileService {
     public Specification<File> filterFiles(
                 Specification<File> spec, 
                 Long minSize, 
-                Long maxSize, 
+                Long maxSize,
                 String name,
                 String extension, 
                 LocalDate dateStart, 
@@ -211,7 +212,6 @@ public class FileService {
 
     public File getValidatedFile(User activeUser, UUID id) {
         File file = fileRepository.findById(id).orElseThrow(() -> new FileNotFoundException("File not found!"));
-        
         if (file.getUserId().equals(activeUser.getId()) || activeUser.getRole().equals(Role.ADMIN)) {
             return file;
         }
@@ -247,6 +247,11 @@ public class FileService {
     
             String type = size.substring(size.length() - 2).toUpperCase();
             if (type.matches("\\p{L}+")) {
+                if (size.contains(".")) {
+                    if (size.substring(size.indexOf(".") + 1).length() > 4) {
+                        throw new InvalidSizeFormatException("Maximum number of fractional digits is 2!");
+                    }
+                } 
                 result = Double.valueOf(size.substring(0, size.length() - 2));
                 switch (type) {
                     case "BB" -> result.longValue();
@@ -262,5 +267,18 @@ public class FileService {
         } catch (NumberFormatException ex) {
             throw new InvalidSizeFormatException("Incorrectly set filter parameter!");
         }
+    }
+
+    public String getFormattedSizeInUnit(Long sizeInBytes, String targetUtil) {
+        Double result = 0.0;
+        switch (targetUtil.toUpperCase()) {
+            case "BB" -> result = Double.valueOf(sizeInBytes);
+            case "KB" -> result = sizeInBytes / 1024.0;
+            case "MB" -> result = sizeInBytes / 1048576.0;
+            case "GB" -> result = sizeInBytes / 1073741824.0;
+            default ->  throw new InvalidSizeFormatException("Invalid type format! Expected format: BB, KB, MB, GB");
+        }
+
+        return result + targetUtil;
     }
 }

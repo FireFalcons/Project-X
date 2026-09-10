@@ -47,6 +47,7 @@ public class FileController {
     public List<FileResponseDto> getAll(@AuthenticationPrincipal User user,
                                         @RequestParam(required = false) String minSize,
                                         @RequestParam(required = false) String maxSize,
+                                        @RequestParam(required = false) String targetUnit,
                                         @RequestParam(required = false) String name,
                                         @RequestParam(required = false) String extension,
                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateStart,
@@ -54,7 +55,7 @@ public class FileController {
                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTimeStart,
                                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTimeEnd) {
 
-        return fileService.getAll(user, minSize, maxSize, name, extension, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
+        return fileService.getAll(user, minSize, maxSize, targetUnit , name, extension, dateStart, dateEnd, dateTimeStart, dateTimeEnd);
     }
 
     @GetMapping("/{id}")
